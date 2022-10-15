@@ -154,7 +154,8 @@ class DataVisualiser:
         #df = pd.DataFrame(scvData)
 
         #plt.scatter(noun_df['Subjectivity'], noun_df['Polarity'])
-        plt.show()
+        plt.savefig('plot_2.png')
+        #plt.show()
 
 
 
