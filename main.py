@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import re
 import time
-
+from collections import defaultdict
 
 class TweetCollector:
     def __init__(self, client) -> None:
@@ -92,60 +92,118 @@ class DataClean:
 class DataAnalysis:
     # Perform sentiment (polarity and subjectivity) analysis on data
 
-    text = "this is  good"
-    polarityAsFloat = TextBlob(text).sentiment.polarity
 
-    # Tweet, Polarity, Subjectivity
+    # text = "this is  good"
+    # polarityAsFloat = TextBlob(text).sentiment.polarity
+
+    # store tweets in this class
+    def __init__(self, all_tweets) -> None:
+        self.tweets = []
+
+        for tweet in all_tweets:
+            self.tweets.append(tweet)
+        # print(self.tweets)
+
+    '''
+    obtain the noun frequencies across all tweets passed to this class
+    returns pandas dataframe with the columns 'noun' and 'freq' for the noun and frequency of each word
+    sorted in descending order of frequency
+    '''
+    def get_noun_frequencies(self): 
+
+        nounFrequencies = defaultdict(int)
+
+        for tweet in self.tweets:
+            for (word, partOfSpeech) in TextBlob(tweet).pos_tags: # PoS tags for a single tweet 
+                if partOfSpeech[0] == 'N' and not (word == "@"): # nouns that aren't usernames 
+                    nounFrequencies[word] += 1
+
+        noun_df = pd.DataFrame.from_dict(nounFrequencies, orient='index', columns=['freq'])
+        noun_df = noun_df.sort_values(['freq'], ascending=False)
+        noun_df.reset_index(inplace=True)
+        noun_df.rename(columns={'index': 'noun'}, inplace=True)
+        
+        return noun_df
+
+    '''
+    use textblob to calculate the polarity and subjectivity of each individual tweet
+    returns a dataframe with each row showing the sentiment for one tweet
+    '''
+    def get_sentiment(self): 
+        
+        sentiments = dict() 
+        for tweet in self.tweets: 
+            polarity = TextBlob(tweet).sentiment.polarity
+            subjectivity = TextBlob(tweet).sentiment.subjectivity
+
+            sentiments[tweet] = [polarity, subjectivity]
+        
+        sentiment_df = pd.DataFrame.from_dict(sentiments, orient='index', columns=['polarity', 'subjectivity'])
+        print(sentiment_df.head(10))
+        sentiment_df.reset_index(inplace=True)
+        sentiment_df.rename(columns={'index': 'tweet_text'}, inplace=True)
+        return sentiment_df
 
 
 class DataVisualiser:
 
-    def __init__(self, tweets, csv_file) -> None:
-        self.tweets = tweets
-        self.csv_file = csv_file
+    # def __init__(self, tweets) -> None:
+    #     self.tweets = tweets
+    #     self.csv_file = noun_freqs
 
-    def plot_figure(self):
+    
+    # def __init__(self, noun_freqs) -> None:
+    #     self.noun_df = noun_freqs
+
+    def plot_figure(self, noun_df):
         # pie chart from nouns
-        # nounFrequencies as pie chart, maybe only take top ten nouns.
+        noun_top = noun_df.head(10)
+        
+        def func(pct):
+            return "{:1.1f}%".format(pct)
+        plt.pie(noun_top['freq'], labels = noun_top['noun'], autopct=lambda pct: func(pct))
 
-        allNouns = []
-        for tweet in tweets:
-            for (word, partOfSpeech) in TextBlob(tweet).pos_tags:
-                if partOfSpeech[0] == 'N' and not (word == "@"):
-                    allNouns.append(word)
-
-        nounFrequencies = {}
-        for noun in allNouns:
-            if noun in nounFrequencies:
-                nounFrequencies[noun] += 1
-            else:
-                nounFrequencies[noun] = 1
-        print(nounFrequencies)
 
         # live graph of tweet sentiments (for specific search term)
         # x axis time, y axis polarity
+        plt.plot(noun_top['noun'], noun_top['freq'])
+        
 
         # scatter graph (different colours)
-        scvData = pd.read_csv(csv_file)
-        df = pd.DataFrame(scvData)
+        #scvData = pd.read_csv(csv_file)
+        #df = pd.DataFrame(scvData)
 
-        plt.scatter(df['Subjectivity'], df['Polarity'])
+        #plt.scatter(noun_df['Subjectivity'], noun_df['Polarity'])
         plt.show()
 
 
+# else:
+    #     # real time information
+    #     streamer = TweetStreamer(bearer_token, 2)
+    #     streamer.add_search_terms(search_terms)
+    #     streamer.filter(expansions="author_id",tweet_fields="created_at")  # starts streaming
+    #     exit()
+
 if __name__ == '__main__':
     bearer_token = open("BearerToken.txt").read()
-    client = tweepy.Client(bearer_token)
-
+    search_terms = "les"
     # history information
-    tc = TweetCollector(client)
-    tc.on_connect()
-    search_query = "gender minority"
-    tweets = tc.get_recent_tweets(search_query, 100)
-    # real time information
-    streamer = TweetStreamer(bearer_token, 2)
-    search_terms = ["gender minority"]
+    while True:
+        client = tweepy.Client(bearer_token)
+        tc = TweetCollector(client)
+        tc.on_connect()
+        tweets = tc.get_recent_tweets(search_terms, 100)
+        if tweets.data is not None:
+            break
 
-    streamer.add_search_terms(search_terms)
-    streamer.filter(expansions="author_id",tweet_fields="created_at")  # starts streaming
-    exit()
+    dc = DataClean(tweets)
+
+    da = DataAnalysis(dc.texts)
+    noun_freqs = da.get_noun_frequencies()
+
+    dv = DataVisualiser()
+    dv.plot_figure(noun_freqs)
+
+    sentiments = da.get_sentiment()
+    print(sentiments)
+
