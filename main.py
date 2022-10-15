@@ -164,7 +164,7 @@ if __name__ == '__main__':
     client = tweepy.Client(bearer_token)
     tc = TweetCollector(client)
     tc.on_connect()
-    search_query = "(#BorisJohnson) -is:retweet"
+    search_query = "les"
     tweets = tc.get_recent_tweets(search_query, 100)
     # todo: clean
     dc = DataClean(tweets)
