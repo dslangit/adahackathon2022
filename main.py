@@ -146,6 +146,7 @@ class DataVisualiser:
 
         # live graph of tweet sentiments (for specific search term)
         # x axis time, y axis polarity
+        plt.title('Top 10 Search Query Result and the Percentage')
         plt.plot(noun_top['noun'], noun_top['freq'])
         
 
@@ -155,13 +156,16 @@ class DataVisualiser:
     
     
     
-        plt.savefig('plot_pie_1.png')
+        plt.savefig('plot_pie_result.png')
 
     def plot_scattered(self, sentiment_df):
         # scattered from sentiment
         plt.close()
+        plt.title('Polarity and Subjectivity of the Keyword Search')
+        plt.xlabel('Polarity')
+        plt.ylabel('Subjectivity')
         plt.scatter(sentiment_df['polarity'], sentiment_df['subjectivity'])
-        plt.savefig('plot_scattered_1.png')
+        plt.savefig('plot_scattered_result.png')
         plt.show()
 
 
@@ -172,7 +176,7 @@ if __name__ == '__main__':
     client = tweepy.Client(bearer_token)
     tc = TweetCollector(client)
     tc.on_connect()
-    search_query = "les"
+    search_query = "women"
     tweets = tc.get_recent_tweets(search_query, 100)
     # todo: clean
     dc = DataClean(tweets)
