@@ -3,6 +3,8 @@ import tweepy
 from textblob import TextBlob
 import pandas as pd
 import matplotlib.pyplot as plt
+from collections import defaultdict
+
 
 
 class TweetCollector:
@@ -63,8 +65,36 @@ class DataClean:
 class DataAnalysis:
     # Perform sentiment (polarity and subjectivity) analysis on data
 
-    text = "this is  good"
-    polarityAsFloat = TextBlob(text).sentiment.polarity
+    # text = "this is  good"
+    # polarityAsFloat = TextBlob(text).sentiment.polarity
+
+    # store tweets in this class
+    def __init__(self, all_tweets) -> None:
+        self.tweets = []
+
+        for tweet in all_tweets:
+            self.tweets.append(tweet)
+        # print(self.tweets)
+
+    '''
+    returns pandas dataframe with the columns 'noun' and 'freq' for the noun and frequency of each word
+    sorted in descending order of frequency
+    '''
+    def get_noun_frequencies(self): 
+
+        nounFrequencies = defaultdict(int)
+
+        for tweet in self.tweets:
+            for (word, partOfSpeech) in TextBlob(tweet).pos_tags: # PoS tags for a single tweet 
+                if partOfSpeech[0] == 'N' and not (word == "@"): # nouns that aren't usernames 
+                    nounFrequencies[word] += 1
+
+        noun_df = pd.DataFrame.from_dict(nounFrequencies, orient='index', columns=['freq'])
+        noun_df = noun_df.sort_values(['freq'], ascending=False)
+        noun_df.reset_index(inplace=True)
+        noun_df.rename(columns={'index': 'noun'}, inplace=True)
+        
+        return noun_df
 
     # Tweet, Polarity, Subjectivity
 
@@ -111,8 +141,14 @@ if __name__ == '__main__':
     tc.on_connect()
     search_query = "(#BorisJohnson) -is:retweet"
     tweets = tc.get_recent_tweets(search_query, 100)
-    # todo: clean
+    
     dc = DataClean(tweets)
-    for text in dc.texts:
-        print(str(text))
-        print("/" * 100 + "\n")
+
+    da = DataAnalysis(dc.texts)
+    noun_freqs = da.get_noun_frequencies()
+
+    print(noun_freqs)
+
+    # for text in dc.texts:
+    #     print(str(text))
+    #     print("/" * 100 + "\n")
