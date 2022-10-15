@@ -23,6 +23,8 @@ class TweetCollector:
         print("TweetCollector Connected successfully")
 
 
+info_text = []
+
 class TweetStreamer(tweepy.StreamingClient):
     def __init__(self, client, time_limit=60):
         super(TweetStreamer, self).__init__(bearer_token)
@@ -30,6 +32,7 @@ class TweetStreamer(tweepy.StreamingClient):
         self.limit = time_limit
         # super(StdOutListener, self).__init__()
         self.num_tweets = 0
+        self.flag = False
 
     # def on_status(self, status):
     #     # record = {'Text': status.text, 'Created At': status.created_at}
@@ -46,6 +49,9 @@ class TweetStreamer(tweepy.StreamingClient):
 
     def on_tweet(self, tweet):
         print(tweet.text)
+        info_text.append(tweet.text)
+        self.flag = True
+        return
         # print("/" * 100)
 
     def add_search_terms(self, search_terms):
@@ -54,6 +60,10 @@ class TweetStreamer(tweepy.StreamingClient):
 
         for term in search_terms:
             self.add_rules(tweepy.StreamRule(term))
+
+    # def filter(self, *, threaded=False, **params):
+    #     if self.flag is True:
+    #         return
 
     # Read in tweets
 
@@ -166,44 +176,26 @@ class DataVisualiser:
 
         # live graph of tweet sentiments (for specific search term)
         # x axis time, y axis polarity
-        plt.title('Top 10 Search Query Result and the Percentage')
         plt.plot(noun_top['noun'], noun_top['freq'])
         
 
         # scatter graph (different colours)
         #scvData = pd.read_csv(csv_file)
         #df = pd.DataFrame(scvData)
-    
-    
-    
-        plt.savefig('plot_pie_result.png')
 
-    def plot_scattered(self, sentiment_df):
-        # scattered from sentiment
-        plt.close()
-        plt.title('Polarity and Subjectivity the Keyword')
-        plt.xlabel('Polarity')
-        plt.ylabel('Subjectivity')
-        plt.scatter(sentiment_df['polarity'], sentiment_df['subjectivity'])
-        plt.savefig('plot_scattered_result.png')
+        #plt.scatter(noun_df['Subjectivity'], noun_df['Polarity'])
         plt.show()
 
 
-# else:
-    #     # real time information
-    #     streamer = TweetStreamer(bearer_token, 2)
-    #     streamer.add_search_terms(search_terms)
-    #     streamer.filter(expansions="author_id",tweet_fields="created_at")  # starts streaming
-    #     exit()
-
 if __name__ == '__main__':
     bearer_token = open("BearerToken.txt").read()
-    client = tweepy.Client(bearer_token)
-    tc = TweetCollector(client)
-    tc.on_connect()
-    search_query = "women"
-    tweets = tc.get_recent_tweets(search_query, 100)
-    # todo: clean
+    search_terms = "les"
+    # real time information
+    while info_text is not None:
+        streamer = TweetStreamer(bearer_token, 2)
+        streamer.add_search_terms(search_terms)
+        streamer.filter(expansions="author_id",tweet_fields="created_at")  # starts streaming
+
     dc = DataClean(tweets)
 
     da = DataAnalysis(dc.texts)
@@ -211,9 +203,7 @@ if __name__ == '__main__':
 
     dv = DataVisualiser()
     dv.plot_figure(noun_freqs)
-    
 
     sentiments = da.get_sentiment()
-    #print(sentiments)
-    dv.plot_scattered(sentiments)
+    print(sentiments)
 

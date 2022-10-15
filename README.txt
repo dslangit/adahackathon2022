@@ -1,0 +1,1 @@
+The project starts at the main.py.
