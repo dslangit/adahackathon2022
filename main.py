@@ -44,7 +44,20 @@ class TweetCollector:
 
 class DataClean:
     # Strip text of special characters
-    pass
+    def __init__(self, tweets) -> None:
+        self.tweets = tweets
+        self.texts=[]
+        self.ids=[]
+        for tweet in self.tweets[0]:
+            self.texts.append(tweet.text)
+            self.ids.append(tweet.id)
+
+
+    #test the class
+    def test(self):
+        for tweet in self.tweets[0]:
+            print(str(tweet.text))
+
 
 
 class DataAnalysis:
@@ -98,3 +111,8 @@ if __name__ == '__main__':
     tc.on_connect()
     search_query = "(#BorisJohnson) -is:retweet"
     tweets = tc.get_recent_tweets(search_query, 100)
+    # todo: clean
+    dc = DataClean(tweets)
+    for text in dc.texts:
+        print(str(text))
+        print("/" * 100 + "\n")
