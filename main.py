@@ -3,7 +3,7 @@ import tweepy
 from textblob import TextBlob
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import re
 
 class TweetCollector:
 
@@ -49,7 +49,15 @@ class DataClean:
         self.texts=[]
         self.ids=[]
         for tweet in self.tweets[0]:
-            self.texts.append(tweet.text)
+            post=tweet.text
+            post=re.sub(r'http://\S+ ', '', post)
+            post = re.sub(r'http://\S+\n', '', post)
+            post = re.sub(r'http://\S+', '', post)
+            post = re.sub(r'https://\S+ ', '', post)
+            post = re.sub(r'https://\S+\n', '', post)
+            post = re.sub(r'https://\S+', '', post)
+            post = re.sub(r'www\.\S+\.com', '', post)
+            self.texts.append(post)
             self.ids.append(tweet.id)
 
 
