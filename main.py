@@ -3,7 +3,7 @@ import tweepy
 from textblob import TextBlob
 import pandas as pd
 import matplotlib.pyplot as plt
-import re
+
 
 class TweetCollector:
 
@@ -49,15 +49,7 @@ class DataClean:
         self.texts=[]
         self.ids=[]
         for tweet in self.tweets[0]:
-            post=tweet.text
-            post = re.sub(r'www\.\S+\.com', '', post)
-            post = re.sub(r'http://\S+ ', '', post)
-            post = re.sub(r'http://\S+\n', '', post)
-            post = re.sub(r'http://\S+', '', post)
-            post = re.sub(r'https://\S+ ', '', post)
-            post = re.sub(r'https://\S+\n', '', post)
-            post = re.sub(r'https://\S+', '', post)
-            self.texts.append(post)
+            self.texts.append(tweet.text)
             self.ids.append(tweet.id)
 
 
@@ -71,10 +63,8 @@ class DataClean:
 class DataAnalysis:
     # Perform sentiment (polarity and subjectivity) analysis on data
 
-    def __init__(self, dc) -> None:
-        self.dc=dc
-
-    #polarityAsFloat = TextBlob(text).sentiment.polarity
+    text = "this is  good"
+    polarityAsFloat = TextBlob(text).sentiment.polarity
 
     # Tweet, Polarity, Subjectivity
 
