@@ -146,14 +146,26 @@ class DataVisualiser:
 
         # live graph of tweet sentiments (for specific search term)
         # x axis time, y axis polarity
+        plt.title('Top 10 Search Query Result and the Percentage')
         plt.plot(noun_top['noun'], noun_top['freq'])
         
 
         # scatter graph (different colours)
         #scvData = pd.read_csv(csv_file)
         #df = pd.DataFrame(scvData)
+    
+    
+    
+        plt.savefig('plot_pie_result.png')
 
-        #plt.scatter(noun_df['Subjectivity'], noun_df['Polarity'])
+    def plot_scattered(self, sentiment_df):
+        # scattered from sentiment
+        plt.close()
+        plt.title('Polarity and Subjectivity the Keyword')
+        plt.xlabel('Polarity')
+        plt.ylabel('Subjectivity')
+        plt.scatter(sentiment_df['polarity'], sentiment_df['subjectivity'])
+        plt.savefig('plot_scattered_result.png')
         plt.show()
 
 
@@ -164,7 +176,7 @@ if __name__ == '__main__':
     client = tweepy.Client(bearer_token)
     tc = TweetCollector(client)
     tc.on_connect()
-    search_query = "les"
+    search_query = "women"
     tweets = tc.get_recent_tweets(search_query, 100)
     # todo: clean
     dc = DataClean(tweets)
@@ -174,9 +186,11 @@ if __name__ == '__main__':
 
     dv = DataVisualiser()
     dv.plot_figure(noun_freqs)
+    
 
     sentiments = da.get_sentiment()
-    print(sentiments)
+    #print(sentiments)
+    dv.plot_scattered(sentiments)
 
     # for text in dc.texts:
     #     print(str(text))
