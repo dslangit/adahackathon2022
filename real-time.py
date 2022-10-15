@@ -61,9 +61,9 @@ class TweetStreamer(tweepy.StreamingClient):
         for term in search_terms:
             self.add_rules(tweepy.StreamRule(term))
 
-    # def filter(self, *, threaded=False, **params):
-    #     if self.flag is True:
-    #         return
+    def on_response(self, response):
+        if self.flag is True:
+            return
 
     # Read in tweets
 
