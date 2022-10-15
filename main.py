@@ -161,7 +161,7 @@ class DataVisualiser:
     def plot_scattered(self, sentiment_df):
         # scattered from sentiment
         plt.close()
-        plt.title('Polarity and Subjectivity of the Keyword Search')
+        plt.title('Polarity and Subjectivity the Keyword')
         plt.xlabel('Polarity')
         plt.ylabel('Subjectivity')
         plt.scatter(sentiment_df['polarity'], sentiment_df['subjectivity'])
