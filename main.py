@@ -152,10 +152,17 @@ class DataVisualiser:
         # scatter graph (different colours)
         #scvData = pd.read_csv(csv_file)
         #df = pd.DataFrame(scvData)
+    
+    
+    
+        plt.savefig('plot_pie_1.png')
 
-        #plt.scatter(noun_df['Subjectivity'], noun_df['Polarity'])
-        plt.savefig('plot_2.png')
-        #plt.show()
+    def plot_scattered(self, sentiment_df):
+        # scattered from sentiment
+        plt.close()
+        plt.scatter(sentiment_df['polarity'], sentiment_df['subjectivity'])
+        plt.savefig('plot_scattered_1.png')
+        plt.show()
 
 
 
@@ -175,9 +182,11 @@ if __name__ == '__main__':
 
     dv = DataVisualiser()
     dv.plot_figure(noun_freqs)
+    
 
     sentiments = da.get_sentiment()
-    print(sentiments)
+    #print(sentiments)
+    dv.plot_scattered(sentiments)
 
     # for text in dc.texts:
     #     print(str(text))
