@@ -4,9 +4,10 @@ from textblob import TextBlob
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
+import time
+
 
 class TweetCollector:
-
     def __init__(self, client) -> None:
         self.client = client
 
@@ -19,12 +20,33 @@ class TweetCollector:
         return tweets
 
     def on_connect(self):
-        print("Connected successfully")
+        print("TweetCollector Connected successfully")
+
+
+class TweetStreamer(tweepy.StreamingClient):
+    def __init__(self, client, time_limit=60):
+        super(TweetStreamer, self).__init__(bearer_token)
+        self.start_time = time.time()
+        self.limit = time_limit
+        # super(StdOutListener, self).__init__()
+        self.num_tweets = 0
+
+    # def on_status(self, status):
+    #     # record = {'Text': status.text, 'Created At': status.created_at}
+    #     # print(record)  # See Tweepy documentation to learn how to access other fields
+    #     self.num_tweets += 1
+    #     if self.num_tweets < 20:
+    #         # collection.insert(record)
+    #         return True
+    #     else:
+    #         return False
+
+    def on_connect(self):
+        print("TweetStreamer Connected successfully")
 
     def on_tweet(self, tweet):
         print(tweet.text)
-        print("/" * 100)
-        time.sleep(0.5)
+        # print("/" * 100)
 
     def add_search_terms(self, search_terms):
         if not (self.get_rules()[0] is None):
@@ -65,7 +87,6 @@ class DataClean:
     def test(self):
         for tweet in self.tweets[0]:
             print(str(tweet.text))
-
 
 
 class DataAnalysis:
@@ -115,12 +136,16 @@ class DataVisualiser:
 if __name__ == '__main__':
     bearer_token = open("BearerToken.txt").read()
     client = tweepy.Client(bearer_token)
+
+    # history information
     tc = TweetCollector(client)
     tc.on_connect()
-    search_query = "(#BorisJohnson) -is:retweet"
+    search_query = "gender minority"
     tweets = tc.get_recent_tweets(search_query, 100)
-    # todo: clean
-    dc = DataClean(tweets)
-    for text in dc.texts:
-        print(str(text))
-        print("/" * 100 + "\n")
+    # real time information
+    streamer = TweetStreamer(bearer_token, 2)
+    search_terms = ["gender minority"]
+
+    streamer.add_search_terms(search_terms)
+    streamer.filter(expansions="author_id",tweet_fields="created_at")  # starts streaming
+    exit()
