@@ -9,6 +9,10 @@ from collections import defaultdict
 import threading
 
 
+info_text = []
+first_time = True
+
+
 class TweetCollector:
     def __init__(self, client) -> None:
         self.client = client
@@ -23,9 +27,6 @@ class TweetCollector:
 
     def on_connect(self):
         print("TweetCollector Connected successfully")
-
-
-info_text = []
 
 
 class TweetStreamer(tweepy.StreamingClient):
@@ -84,6 +85,7 @@ class DataClean:
         self.texts = []
         self.ids = []
         if not self.info_text:
+            print("empty")
             return
         for tweet in self.info_text[0]:
             post = tweet[1]
@@ -194,23 +196,30 @@ def collectInfo():
     bearer_token = open("BearerToken.txt").read()
     search_terms = "les"
     # real time information
-    while info_text is not None:
+    # while info_text is not None:
+    while True:
+        print("collectInfo")
         streamer = TweetStreamer(bearer_token, 2)
         streamer.add_search_terms(search_terms)
         streamer.filter(expansions="author_id", tweet_fields="created_at")  # starts streaming
 
 
 def showInfo():
-    dc = DataClean(info_text)
+    while True:
+        print("showInfo")
+        if not info_text:
+            print("empty showInfo")
+            break
+        dc = DataClean(info_text)
 
-    da = DataAnalysis(dc.texts)
-    noun_freqs = da.get_noun_frequencies()
+        da = DataAnalysis(dc.texts)
+        noun_freqs = da.get_noun_frequencies()
 
-    dv = DataVisualiser()
-    dv.plot_figure(noun_freqs)
+        dv = DataVisualiser()
+        dv.plot_figure(noun_freqs)
 
-    sentiments = da.get_sentiment()
-    print(sentiments)
+        sentiments = da.get_sentiment()
+        print(sentiments)
 
 
 if __name__ == '__main__':
@@ -218,8 +227,9 @@ if __name__ == '__main__':
     t2 = threading.Thread(target=collectInfo())
 
     # start the threads
+    t1.setDaemon(True)
+    t2.setDaemon(True)
     t1.start()
     t2.start()
-
-    t1.join()
-    t2.join()
+    while True:
+        pass
