@@ -101,36 +101,29 @@ class DataAnalysis:
 
 class DataVisualiser:
 
-    def __init__(self, tweets, csv_file) -> None:
-        self.tweets = tweets
-        self.csv_file = csv_file
+    # def __init__(self, tweets) -> None:
+    #     self.tweets = tweets
+    #     self.csv_file = noun_freqs
 
-    def plot_figure(self):
+    
+    # def __init__(self, noun_freqs) -> None:
+    #     self.noun_df = noun_freqs
+
+    def plot_figure(self, noun_df):
         # pie chart from nouns
-        # nounFrequencies as pie chart, maybe only take top ten nouns.
+        noun_top = noun_df.head(10)
+        plt.pie(noun_top['freq'], labels = noun_top['noun'], autopct='%.1f')
 
-        allNouns = []
-        for tweet in tweets:
-            for (word, partOfSpeech) in TextBlob(tweet).pos_tags:
-                if partOfSpeech[0] == 'N' and not (word == "@"):
-                    allNouns.append(word)
-
-        nounFrequencies = {}
-        for noun in allNouns:
-            if noun in nounFrequencies:
-                nounFrequencies[noun] += 1
-            else:
-                nounFrequencies[noun] = 1
-        print(nounFrequencies)
 
         # live graph of tweet sentiments (for specific search term)
         # x axis time, y axis polarity
+        plt.plot(noun_top['noun'], noun_top['freq'])
 
         # scatter graph (different colours)
-        scvData = pd.read_csv(csv_file)
-        df = pd.DataFrame(scvData)
+        #scvData = pd.read_csv(csv_file)
+        #df = pd.DataFrame(scvData)
 
-        plt.scatter(df['Subjectivity'], df['Polarity'])
+        #plt.scatter(self.noun_df['Subjectivity'], self.noun_df['Polarity'])
         plt.show()
 
 
@@ -148,6 +141,9 @@ if __name__ == '__main__':
     noun_freqs = da.get_noun_frequencies()
 
     print(noun_freqs)
+
+    dv = DataVisualiser()
+    dv.plot_figure(noun_freqs)
 
     # for text in dc.texts:
     #     print(str(text))
