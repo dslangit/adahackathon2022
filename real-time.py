@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import re
 import time
 from collections import defaultdict
+import threading
+
 
 class TweetCollector:
     def __init__(self, client) -> None:
@@ -25,8 +27,9 @@ class TweetCollector:
 
 info_text = []
 
+
 class TweetStreamer(tweepy.StreamingClient):
-    def __init__(self, client, time_limit=60):
+    def __init__(self, bearer_token, client, time_limit=60):
         super(TweetStreamer, self).__init__(bearer_token)
         self.start_time = time.time()
         self.limit = time_limit
@@ -49,7 +52,7 @@ class TweetStreamer(tweepy.StreamingClient):
 
     def on_tweet(self, tweet):
         print(tweet.text)
-        info_text.append(tweet.text)
+        info_text.append([tweet.id, tweet.text])
         self.flag = True
         return
         # print("/" * 100)
@@ -76,13 +79,15 @@ class TweetStreamer(tweepy.StreamingClient):
 
 class DataClean:
     # Strip text of special characters
-    def __init__(self, tweets) -> None:
-        self.tweets = tweets
-        self.texts=[]
-        self.ids=[]
-        for tweet in self.tweets[0]:
-            post=tweet.text
-            post=re.sub(r'http://\S+ ', '', post)
+    def __init__(self, info_text) -> None:
+        self.info_text = info_text
+        self.texts = []
+        self.ids = []
+        if not self.info_text:
+            return
+        for tweet in self.info_text[0]:
+            post = tweet[1]
+            post = re.sub(r'http://\S+ ', '', post)
             post = re.sub(r'http://\S+\n', '', post)
             post = re.sub(r'http://\S+', '', post)
             post = re.sub(r'https://\S+ ', '', post)
@@ -90,10 +95,9 @@ class DataClean:
             post = re.sub(r'https://\S+', '', post)
             post = re.sub(r'www\.\S+\.com', '', post)
             self.texts.append(post)
-            self.ids.append(tweet.id)
+            self.ids.append(tweet[0])
 
-
-    #test the class
+    # test the class
     def test(self):
         for tweet in self.tweets[0]:
             print(str(tweet.text))
@@ -101,7 +105,6 @@ class DataClean:
 
 class DataAnalysis:
     # Perform sentiment (polarity and subjectivity) analysis on data
-
 
     # text = "this is  good"
     # polarityAsFloat = TextBlob(text).sentiment.polarity
@@ -119,35 +122,37 @@ class DataAnalysis:
     returns pandas dataframe with the columns 'noun' and 'freq' for the noun and frequency of each word
     sorted in descending order of frequency
     '''
-    def get_noun_frequencies(self): 
+
+    def get_noun_frequencies(self):
 
         nounFrequencies = defaultdict(int)
 
         for tweet in self.tweets:
-            for (word, partOfSpeech) in TextBlob(tweet).pos_tags: # PoS tags for a single tweet 
-                if partOfSpeech[0] == 'N' and not (word == "@"): # nouns that aren't usernames 
+            for (word, partOfSpeech) in TextBlob(tweet).pos_tags:  # PoS tags for a single tweet
+                if partOfSpeech[0] == 'N' and not (word == "@"):  # nouns that aren't usernames
                     nounFrequencies[word] += 1
 
         noun_df = pd.DataFrame.from_dict(nounFrequencies, orient='index', columns=['freq'])
         noun_df = noun_df.sort_values(['freq'], ascending=False)
         noun_df.reset_index(inplace=True)
         noun_df.rename(columns={'index': 'noun'}, inplace=True)
-        
+
         return noun_df
 
     '''
     use textblob to calculate the polarity and subjectivity of each individual tweet
     returns a dataframe with each row showing the sentiment for one tweet
     '''
-    def get_sentiment(self): 
-        
-        sentiments = dict() 
-        for tweet in self.tweets: 
+
+    def get_sentiment(self):
+
+        sentiments = dict()
+        for tweet in self.tweets:
             polarity = TextBlob(tweet).sentiment.polarity
             subjectivity = TextBlob(tweet).sentiment.subjectivity
 
             sentiments[tweet] = [polarity, subjectivity]
-        
+
         sentiment_df = pd.DataFrame.from_dict(sentiments, orient='index', columns=['polarity', 'subjectivity'])
         print(sentiment_df.head(10))
         sentiment_df.reset_index(inplace=True)
@@ -161,42 +166,42 @@ class DataVisualiser:
     #     self.tweets = tweets
     #     self.csv_file = noun_freqs
 
-    
     # def __init__(self, noun_freqs) -> None:
     #     self.noun_df = noun_freqs
 
     def plot_figure(self, noun_df):
         # pie chart from nouns
         noun_top = noun_df.head(10)
-        
+
         def func(pct):
             return "{:1.1f}%".format(pct)
-        plt.pie(noun_top['freq'], labels = noun_top['noun'], autopct=lambda pct: func(pct))
 
+        plt.pie(noun_top['freq'], labels=noun_top['noun'], autopct=lambda pct: func(pct))
 
         # live graph of tweet sentiments (for specific search term)
         # x axis time, y axis polarity
         plt.plot(noun_top['noun'], noun_top['freq'])
-        
 
         # scatter graph (different colours)
-        #scvData = pd.read_csv(csv_file)
-        #df = pd.DataFrame(scvData)
+        # scvData = pd.read_csv(csv_file)
+        # df = pd.DataFrame(scvData)
 
-        #plt.scatter(noun_df['Subjectivity'], noun_df['Polarity'])
+        # plt.scatter(noun_df['Subjectivity'], noun_df['Polarity'])
         plt.show()
 
 
-if __name__ == '__main__':
+def collectInfo():
     bearer_token = open("BearerToken.txt").read()
     search_terms = "les"
     # real time information
     while info_text is not None:
         streamer = TweetStreamer(bearer_token, 2)
         streamer.add_search_terms(search_terms)
-        streamer.filter(expansions="author_id",tweet_fields="created_at")  # starts streaming
+        streamer.filter(expansions="author_id", tweet_fields="created_at")  # starts streaming
 
-    dc = DataClean(tweets)
+
+def showInfo():
+    dc = DataClean(info_text)
 
     da = DataAnalysis(dc.texts)
     noun_freqs = da.get_noun_frequencies()
@@ -207,3 +212,14 @@ if __name__ == '__main__':
     sentiments = da.get_sentiment()
     print(sentiments)
 
+
+if __name__ == '__main__':
+    t1 = threading.Thread(target=showInfo())
+    t2 = threading.Thread(target=collectInfo())
+
+    # start the threads
+    t1.start()
+    t2.start()
+
+    t1.join()
+    t2.join()
