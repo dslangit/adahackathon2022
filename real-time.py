@@ -53,7 +53,7 @@ class TweetStreamer(tweepy.StreamingClient):
 
     def on_tweet(self, tweet):
         print(tweet.text)
-        info_text.append([tweet.id, tweet.text])
+        info_text = [tweet.id, tweet.text]
         self.flag = True
         return
         # print("/" * 100)
@@ -87,7 +87,7 @@ class DataClean:
         if not self.info_text:
             print("empty")
             return
-        for tweet in self.info_text[0]:
+        for tweet in self.info_text:
             post = tweet[1]
             post = re.sub(r'http://\S+ ', '', post)
             post = re.sub(r'http://\S+\n', '', post)
@@ -178,6 +178,7 @@ class DataVisualiser:
         def func(pct):
             return "{:1.1f}%".format(pct)
 
+        fig = plt.figure()
         plt.pie(noun_top['freq'], labels=noun_top['noun'], autopct=lambda pct: func(pct))
 
         # live graph of tweet sentiments (for specific search term)
@@ -192,39 +193,55 @@ class DataVisualiser:
         plt.show()
 
 
+bearer_token = open("BearerToken.txt").read()
+search_terms = "les"
+
+
+def collectImpl():
+    streamer = TweetStreamer(bearer_token, 2)
+    streamer.add_search_terms(search_terms)
+    streamer.filter(expansions="author_id", tweet_fields="created_at")  # starts streaming
+
+
 def collectInfo():
-    bearer_token = open("BearerToken.txt").read()
-    search_terms = "les"
     # real time information
     # while info_text is not None:
     while True:
         print("collectInfo")
-        streamer = TweetStreamer(bearer_token, 2)
-        streamer.add_search_terms(search_terms)
-        streamer.filter(expansions="author_id", tweet_fields="created_at")  # starts streaming
+        if info_text:
+            print("non-empty collectInfo")
+            continue
+        else:
+            collectImpl()
+
+
+def showInfoImpl():
+    dc = DataClean(info_text)
+    info_text.clear()
+
+    da = DataAnalysis(dc.texts)
+    noun_freqs = da.get_noun_frequencies()
+
+    dv = DataVisualiser()
+    dv.plot_figure(noun_freqs)
+
+    sentiments = da.get_sentiment()
+    print(sentiments)
 
 
 def showInfo():
     while True:
-        print("showInfo")
+        # print("showInfo")
         if not info_text:
-            print("empty showInfo")
-            break
-        dc = DataClean(info_text)
-
-        da = DataAnalysis(dc.texts)
-        noun_freqs = da.get_noun_frequencies()
-
-        dv = DataVisualiser()
-        dv.plot_figure(noun_freqs)
-
-        sentiments = da.get_sentiment()
-        print(sentiments)
+            # print("empty showInfo")
+            continue
+        else:
+            showInfoImpl()
 
 
 if __name__ == '__main__':
-    t1 = threading.Thread(target=showInfo())
-    t2 = threading.Thread(target=collectInfo())
+    t1 = threading.Thread(target=collectInfo)
+    t2 = threading.Thread(target=showInfo)
 
     # start the threads
     t1.setDaemon(True)
